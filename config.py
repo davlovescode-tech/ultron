@@ -31,7 +31,7 @@ OWNER_TITLE = os.getenv("OWNER_TITLE", "sir")
 DEV_GUILD_ID = _int("DEV_GUILD_ID")         # optional: instant slash-command sync in one server
 
 # --- LLM (any OpenAI-compatible endpoint; defaults to Groq's free tier) -------
-LLM_API_KEY = os.getenv("LLM_API_KEY", "")
+LLM_API_KEY = os.getenv("LLM_API_KEY", "").strip().strip("\"\x27")
 LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1")
 LLM_MODEL = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
 

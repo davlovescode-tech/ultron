@@ -73,6 +73,9 @@ class Brain:
     # -- lifecycle --------------------------------------------------------------
     async def start(self):
         self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30))
+        key = config.LLM_API_KEY
+        log.info("LLM config: key %s (len=%d, starts %r), model=%s, url=%s",
+                 "found" if key else "NOT FOUND", len(key), key[:4], config.LLM_MODEL, config.LLM_BASE_URL)
 
     async def close(self):
         if self.session:
@@ -98,6 +101,8 @@ class Brain:
     async def complete(self, system: str, user: str, *, max_tokens: int = 220, temperature: float = 1.0):
         """One LLM call. Returns text, or None on any failure (callers use a canned fallback)."""
         if not config.LLM_API_KEY or not self.session:
+            log.warning("LLM disabled: LLM_API_KEY is %s, session is %s -> using canned lines",
+                        "empty" if not config.LLM_API_KEY else "set", "ready" if self.session else "missing")
             return None
         payload = {
             "model": config.LLM_MODEL,
