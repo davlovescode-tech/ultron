@@ -113,6 +113,10 @@ class Brain:
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
+        if "gpt-oss" in config.LLM_MODEL:
+            # Reasoning model: keep thinking short so it doesn't eat the token budget.
+            payload["reasoning_effort"] = "low"
+            payload["max_tokens"] = max_tokens + 400
         headers = {"Authorization": f"Bearer {config.LLM_API_KEY}", "Content-Type": "application/json"}
         url = config.LLM_BASE_URL.rstrip("/") + "/chat/completions"
         try:
