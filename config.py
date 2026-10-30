@@ -39,6 +39,7 @@ LLM_MODEL = os.getenv("LLM_MODEL", "openai/gpt-oss-120b")
 JUMPIN_HOURS = _float("JUMPIN_HOURS", 5.0)              # random jump-in interval
 JUMPIN_CHANNEL_IDS = _id_set("JUMPIN_CHANNEL_IDS")      # optional: restrict jump-ins
 BOOT_CHANNEL_ID = _int("BOOT_CHANNEL_ID")               # optional: post a boot sequence here
+STORE_CHANNEL_ID = _int("STORE_CHANNEL_ID")             # optional: private channel used as permanent memory
 
 # --- Hosting -----------------------------------------------------------------
 PORT = _int("PORT", 8080)                               # Render injects PORT automatically

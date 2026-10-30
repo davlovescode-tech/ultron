@@ -79,3 +79,17 @@ lines.py           canned fallback lines
 keepalive.py       web server for Render and uptimebot
 cogs/              personality, ai, fun, utility, atmosphere, owner
 ```
+
+## VIPs, silence and standing orders (owner only, remembered permanently)
+
+- `vip add @user` / `vip remove @user` / `vip list`: VIPs are never roasted (no `/roast`, no ping-roasts, no jump-ins) and the bot is polite to them.
+- `silence` / `unsilence`: stop or resume replying. Optional `@user`, or scope `here`. Natural language works too: say
+  `jarvis dont reply`, `jarvis dont reply here`, `jarvis dont reply to @user`, then `jarvis you can reply again`.
+  The bot stays silent (no replies, roasts or jump-ins) until you say otherwise, even after restarts. Commands still work.
+- `orders add <text>` / `orders list` / `orders remove <n>` / `orders clear`: permanent instructions added to every AI reply
+  (e.g. `orders add Never mention football`).
+- `memory`: shows everything the bot remembers.
+
+**Make memory survive Render restarts:** create a private text channel only the bot can see (give it View Channel, Send Messages,
+Attach Files, Read Message History, Manage Messages), copy its ID (Developer Mode -> right click -> Copy Channel ID) and set it as
+`STORE_CHANNEL_ID` on Render. The bot keeps a `state.json` backup there and restores it on startup.

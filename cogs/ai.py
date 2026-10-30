@@ -34,6 +34,10 @@ class AI(commands.Cog):
         brain = self.bot.brain
         target = member
         reason = "No reason needed. Just roast them."
+        if member.id in self.bot.store.vips:
+            return await ctx.send(f"{member.display_name} is a VIP. They are not to be roasted, and I do not make exceptions.")
+        if member.id == config.OWNER_ID and ctx.author.id in self.bot.store.vips:
+            return await ctx.send("Kind of you to ask, but no. Some things are not for roasting.")
         if member.id == config.OWNER_ID:
             if ctx.author.id == config.OWNER_ID:
                 return await ctx.send(f"Roast you, {config.OWNER_TITLE}? I'd need a week and a much bigger server. Respectfully declining.")

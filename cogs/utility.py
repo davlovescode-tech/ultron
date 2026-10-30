@@ -34,7 +34,7 @@ class Utility(commands.Cog):
             color=self.bot.brain.color,
         )
         for name, cog in self.bot.cogs.items():
-            if name == "Owner" and not is_owner:
+            if name in ("Owner", "Control") and not is_owner:
                 continue
             cmds = [c for c in cog.get_commands() if not c.hidden]
             if not cmds:

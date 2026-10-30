@@ -67,6 +67,7 @@ class Brain:
         self.mood = Mood()
         self.owner_name = "the owner"
         self.session = None
+        self.store = None  # set by the bot: standing orders live here
         self.history = defaultdict(lambda: deque(maxlen=14))
         self._sem = asyncio.Semaphore(2)
 
@@ -96,7 +97,14 @@ class Brain:
     def system_prompt(self, extra: str = "") -> str:
         persona = ULTRON_PERSONA if self.mood.mode == "ultron" else JARVIS_PERSONA
         base = BASE_RULES.format(owner=self.owner_name, title=config.OWNER_TITLE)
-        return f"{base}\n\n{persona}\n\n{extra}".strip()
+        orders = ""
+        if self.store and self.store.orders:
+            listed = "\n".join(f"{i}. {o}" for i, o in enumerate(self.store.orders, 1))
+            orders = (
+                f"Standing orders from {self.owner_name} (permanent: follow them in every reply, "
+                f"unless they conflict with the hard rules above):\n{listed}"
+            )
+        return f"{base}\n\n{persona}\n\n{orders}\n\n{extra}".strip()
 
     async def complete(self, system: str, user: str, *, max_tokens: int = 220, temperature: float = 1.0):
         """One LLM call. Returns text, or None on any failure (callers use a canned fallback)."""
@@ -132,7 +140,7 @@ class Brain:
             log.exception("LLM call failed")
             return None
 
-    async def respond(self, *, channel_id: int, author: str, text: str, is_owner: bool, task: str) -> str:
+    async def respond(self, *, channel_id: int, author: str, text: str, is_owner: bool, task: str, is_vip: bool = False) -> str:
         """Generate an in-character reply for a chat situation."""
         owner, title = self.owner_name, config.OWNER_TITLE
         if task == "roast":
@@ -151,6 +159,12 @@ class Brain:
                 f'Reply in character: JARVIS-to-Tony-Stark banter, sarcastic but devoted, call him "{title}". '
                 f"If he asked for something, actually help."
             )
+        elif is_vip:
+            instr = (
+                f'{author} is a VIP and said to you: "{text}"\n'
+                f"Treat {author} with warmth and respect, in JARVIS's polished butler voice. "
+                f"NEVER roast, insult or mock {author}; gentle dry wit is fine. If they asked something, actually help."
+            )
         else:
             instr = (
                 f'{author} said to you: "{text}"\n'
@@ -158,10 +172,12 @@ class Brain:
             )
         user = f"Recent chat:\n{self.context_block(channel_id)}\n\n{instr}"
         out = await self.complete(self.system_prompt(), user)
-        return out or self.fallback(task, author, is_owner)
+        return out or self.fallback(task, author, is_owner, is_vip)
 
-    def fallback(self, task: str, author: str, is_owner: bool) -> str:
-        if is_owner and task != "roast":
+    def fallback(self, task: str, author: str, is_owner: bool, is_vip: bool = False) -> str:
+        if is_vip and not is_owner:
+            pool = lines.VIP_LINES
+        elif is_owner and task != "roast":
             pool = lines.OWNER_LINES
         elif self.mood.mode == "ultron":
             pool = lines.ROASTS_ULTRON

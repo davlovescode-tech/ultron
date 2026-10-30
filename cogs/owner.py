@@ -1,7 +1,5 @@
 """Owner-only commands."""
-import json
 import logging
-from pathlib import Path
 from typing import Literal, Optional
 
 import discord
@@ -11,7 +9,6 @@ from discord.ext import commands
 import config
 
 log = logging.getLogger("jarvis.owner")
-BLACKLIST_FILE = Path("data/blacklist.json")
 
 
 def owner_only():
@@ -26,21 +23,6 @@ class Owner(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self._load_blacklist()
-
-    # -- persistence (best effort: Render's free disk resets on redeploy) -----------
-    def _load_blacklist(self):
-        try:
-            self.bot.blacklist = set(json.loads(BLACKLIST_FILE.read_text()))
-        except (OSError, ValueError):
-            self.bot.blacklist = set()
-
-    def _save_blacklist(self):
-        try:
-            BLACKLIST_FILE.parent.mkdir(parents=True, exist_ok=True)
-            BLACKLIST_FILE.write_text(json.dumps(sorted(self.bot.blacklist)))
-        except OSError:
-            log.warning("Could not persist the blacklist.")
 
     # -- commands -----------------------------------------------------------------
     @commands.hybrid_command(name="say", description="Make J.A.R.V.I.S. speak (owner only).")
@@ -86,14 +68,14 @@ class Owner(commands.Cog):
         if member.id == config.OWNER_ID:
             return await ctx.send("Blacklisting yourself? Bold. Denied.", ephemeral=True)
         self.bot.blacklist.add(member.id)
-        self._save_blacklist()
+        self.bot.store.save()
         await ctx.send(f"{member.display_name} has been erased from my attention.")
 
     @commands.hybrid_command(name="unblacklist", description="Restore someone's access (owner only).")
     @owner_only()
     async def unblacklist(self, ctx, member: discord.Member):
         self.bot.blacklist.discard(member.id)
-        self._save_blacklist()
+        self.bot.store.save()
         await ctx.send(f"{member.display_name} may speak again. Try not to waste it.")
 
     @commands.hybrid_command(name="broadcast", description="Announce a message in every server (owner only).")

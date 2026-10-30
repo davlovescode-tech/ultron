@@ -10,6 +10,7 @@ import config
 import lines
 from brain import Brain
 from keepalive import start_keepalive
+from store import Store
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 log = logging.getLogger("jarvis")
@@ -21,6 +22,7 @@ COGS = (
     "cogs.utility",
     "cogs.atmosphere",
     "cogs.owner",
+    "cogs.control",
 )
 
 # Prefix commands: "jarvis ping", "jarvis, ping", "j!ping" (case-insensitive), or @mention.
@@ -47,14 +49,19 @@ class Jarvis(commands.Bot):
             help_command=None,
             allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=False),
         )
+        self.store = Store()
         self.brain = Brain()
-        self.blacklist = set()
+        self.brain.store = self.store
+        self.blacklist = self.store.blacklist  # same set object, so it persists with everything else
         self.started_at = time.time()
         self._owner_loaded = False
+        self._store_attached = False
         self.add_check(self._global_check)
 
     async def _global_check(self, ctx) -> bool:
-        return ctx.author.id == config.OWNER_ID or ctx.author.id not in self.blacklist
+        if ctx.author.id == config.OWNER_ID:
+            return True
+        return ctx.author.id not in self.blacklist and ctx.author.id not in self.store.silenced_users
 
     async def setup_hook(self):
         await self.brain.start()
@@ -71,6 +78,9 @@ class Jarvis(commands.Bot):
 
     async def on_ready(self):
         log.info("Online as %s (%s) in %d servers", self.user, self.user.id, len(self.guilds))
+        if not self._store_attached:
+            self._store_attached = True
+            await self.store.attach(self)  # restores VIPs, silence rules, orders from Discord
         if config.OWNER_ID and not self._owner_loaded:
             try:
                 owner = await self.fetch_user(config.OWNER_ID)
@@ -84,6 +94,8 @@ class Jarvis(commands.Bot):
         if isinstance(error, commands.CommandNotFound):
             return
         if isinstance(error, commands.CheckFailure):
+            if ctx.author.id in self.store.silenced_users or ctx.author.id in self.blacklist:
+                return  # silenced on purpose: no reply at all
             return await ctx.send(random.choice(lines.DENIED), ephemeral=True)
         if isinstance(error, commands.CommandOnCooldown):
             return await ctx.send(f"Patience. Try again in {error.retry_after:.0f}s.", ephemeral=True)

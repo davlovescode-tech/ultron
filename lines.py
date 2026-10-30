@@ -84,3 +84,11 @@ ULTRON_STATUSES = [
     ("listening", "to the sound of strings snapping"),
     ("watching", "the extinction countdown"),
 ]
+
+VIP_LINES = [
+    "Of course, {name}. Always a pleasure. Genuinely.",
+    "At your service, {name}. What do you need?",
+    "{name}, welcome. You have my full attention, which is more than most get.",
+    "Certainly, {name}. Consider it handled.",
+    "Ah, {name}. One of the few worth my processing power.",
+]
